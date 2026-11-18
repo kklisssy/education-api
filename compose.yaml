@@ -1,0 +1,28 @@
+services:
+  api:
+    build: .
+    ports:
+      - "8001:8000"
+    restart: unless-stopped
+    # API не подключается к PostgreSQL на текущем этапе задания.
+
+  db:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_DB: education_center
+      POSTGRES_USER: education_user
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-local_development_password}
+    ports:
+      - "127.0.0.1:5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./migrations/001_create_tables.sql:/docker-entrypoint-initdb.d/001_create_tables.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U education_user -d education_center"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
